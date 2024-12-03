@@ -1,4 +1,4 @@
-use std::fmt::format;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 
@@ -11,7 +11,6 @@ fn main() -> Result<()> {
 
     let mut left: Vec<i64> = Vec::new();
     let mut right: Vec<i64> = Vec::new();
-    let mut total: i64 = 0;
 
     for line in input.lines() {
         let mut parts = line.split("   ");
@@ -23,7 +22,22 @@ fn main() -> Result<()> {
         right.push(right_part);
     }
 
+    let delta = total_delta(&left, &right)?;
+    println!("Total delta: {}", delta);
+
+    let matching = similarity_score(&left, &right)?;
+    println!("Total similarity score: {}", matching);
+
+    Ok(())
+}
+
+// Part 1
+fn total_delta(left: &[i64], right: &[i64]) -> Result<i64> {
+    let mut left = Vec::from(left);
+    let mut right = Vec::from(right);
+
     // Sort backwards for efficient popping off the end of min value
+    let mut total: i64 = 0;
     left.sort_by(|a, b| b.cmp(a));
     right.sort_by(|a, b| b.cmp(a));
 
@@ -33,7 +47,25 @@ fn main() -> Result<()> {
         total += (left.pop().unwrap() - right.pop().unwrap()).abs();
     }
 
-    println!("Total delta: {}", total);
+    Ok(total)
+}
 
-    Ok(())
+// Part 2
+fn similarity_score(left: &[i64], right: &[i64]) -> Result<i64> {
+    let mut right_counts: HashMap<&i64, i64> = HashMap::with_capacity(right.len());
+    let mut score = 0;
+
+    for num in right {
+        let count = right_counts.get(num).unwrap_or(&0) + 1;
+        right_counts.insert(num, count);
+    }
+
+    for num in left {
+        if right_counts.contains_key(num) {
+            // TODO: Clean this up >.>
+            score += num * right_counts.get(num).unwrap();
+        }
+    }
+
+    Ok(score)
 }
