@@ -7,6 +7,7 @@ fn slurp(day: i64) -> Result<String> {
 fn main() -> Result<()> {
     let input = slurp(2)?;
     let mut safe_count = 0;
+    let mut safe_stabalized_count = 0;
 
     for line in input.lines() {
         let parts: Vec<i64> = line
@@ -17,20 +18,28 @@ fn main() -> Result<()> {
             })
             .collect::<Result<Vec<i64>>>()?;
 
-        if is_safe(&parts)? {
+        if is_safe(&parts, 0)? {
             safe_count += 1;
+        }
+        if is_safe(&parts, 1)? {
+            safe_stabalized_count += 1;
         }
     }
 
     println!("Total safe dataset: {}", safe_count);
+    println!(
+        "Total safe dataset (with stabalizer): {}",
+        safe_stabalized_count
+    );
 
     Ok(())
 }
 
-// Part 1
-fn is_safe(report: &[i64]) -> Result<bool> {
+// Part 1 & 2
+fn is_safe(report: &[i64], tolerance: i64) -> Result<bool> {
     let mut iter = report.iter();
     let increasing: bool;
+    let mut tolerance = tolerance;
 
     let first = iter
         .next()
@@ -41,7 +50,10 @@ fn is_safe(report: &[i64]) -> Result<bool> {
 
     if (second - first).abs() > 3 {
         // Delta too large
-        return Ok(false);
+        tolerance -= 1;
+        if tolerance <= 0 {
+            return Ok(false);
+        }
     }
 
     if first < second {
@@ -50,22 +62,35 @@ fn is_safe(report: &[i64]) -> Result<bool> {
         increasing = false;
     } else {
         // Repeated numbers
-        return Ok(false);
+        tolerance -= 1;
+        if tolerance <= 0 {
+            return Ok(false);
+        }
+        // fuck we have to advance the iterator
     }
 
     let mut last = second;
     for curr in iter {
         if (last - curr).abs() > 3 {
-            return Ok(false);
+            tolerance -= 1;
+            if tolerance <= 0 {
+                return Ok(false);
+            }
         }
 
         if increasing {
             if last >= curr {
-                return Ok(false);
+                tolerance -= 1;
+                if tolerance <= 0 {
+                    return Ok(false);
+                }
             }
         } else {
             if last <= curr {
-                return Ok(false);
+                tolerance -= 1;
+                if tolerance <= 0 {
+                    return Ok(false);
+                }
             }
         }
         last = curr;
